@@ -1,0 +1,383 @@
+<!doctype html>
+<html>
+<head>
+	<title>UWE SN Search</title>
+	<meta charset="UTF-8">
+	<style type="text/css">
+		html{
+			background:#444;
+			color:#fff;
+			font:"16px sans-serif";
+		}
+		#results{
+			min-height:  300px;
+		}
+		#results tr{
+			
+			vertical-align: top;
+		}
+		a{
+		color:#9af;
+		}
+		th{
+			text-align:left;
+		}
+		h3{
+			margin:0;
+			padding:1em 0 0 0;
+
+		}
+		header{
+			border-bottom: 1px solid #222;
+			padding:1em;
+		}
+		th{
+			background:#222;
+		}
+		th.headerSortDown,th.headerSortUp{
+			background:#224;
+		}
+		th.headerSortDown::after{
+			content: "⇧"
+		}
+		
+		th.headerSortUp::after{
+			content: "⇩"
+		}
+		
+	</style>
+
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+	<script src="jquery.tablesorter.min.js"></script>
+	<script src="https://trello.com/1/client.js?key=1afa096bd082fd2fb67b91bc9c6b43e7"></script>
+	<script>
+		Trello.authorize({name:"Confused's magic search box"});
+
+		var trello_search=
+		new (function(){
+			var trello_search = this;
+			this.data={
+				state:"loading",
+				lists:{
+
+				},
+				boards:{
+					//"fp":"OspnbWW",,
+					//"ns2-bugs":"TVyLggmS",
+					"5a384b112777328acca621c2":"sn-art-animation",
+					"595fe628d7d6fc1e1b621a90":"sn-level-design-issues",
+					"5a4a020d679ab7c5c4071a89":"sn-programming-issues",
+					"59a867333d1b532c80738861":"sn-story-text-issues-board",
+					"52460829b7e0c8990b00008e":"subnautica-development",
+					//"DH74qYKT":"subnautica-done",
+					"5358179d069495345b522457":"subnautica-playtesting",
+					"58453ea601286d63b0738353":"subnautica-polish",
+					"569ed6f40ea45fd3be1dc8d3":"subnautica-release-issues",
+					//"KbugnSRJ":"subnautica-roadmap",
+					"5491f961aaa349bb7ebdfc3a":"subnautica-temporary-storage",
+					"587ec3695fe6dc613f328b4b":"subnautica-xbox-release-bugfixing",
+					"53b5beffc164e8f97e420c96":"subnautica-level-design"
+				},
+				cards:{
+
+				},
+				updated:"Never"
+
+			}
+
+			this.init=function(){
+				setInterval(trello_search.updateState, 1000);
+				trello_search.loadData();
+				document.getElementById("search").addEventListener("keyup", search.enterToSearch);
+				trello_search.populateBoardCheckboxes();
+			};
+
+			this.updateState=function(){
+				var status  = document.getElementById("status");
+				status.innerText = trello_search.data.state+ " Data Updated at "+trello_search.data.updated;
+
+			};
+
+
+			this.searchcache = function(){
+				var terms = document.getElementById("search").value.toLowerCase().split(" ");
+
+				//[^\s"']+|"([^"]*)"|'([^']*)'
+				console.log(terms);
+				//TODO tokenize
+
+
+
+				//for each board then for each list search title, description for terms in search string.
+				var foundcards = [];
+				for(var c in trello_search.data.cards){
+					var card = trello_search.data.cards[c];
+					if(document.getElementById("check_"+card.idBoard).checked){
+						for(var i = 0;i < terms.length;i++){
+							if(card.name.toLowerCase().indexOf(terms[i])>=0
+								||card.desc.toLowerCase().indexOf(terms[i])>=0){
+								foundcards.push(card);
+								break;
+							}
+						}
+					}
+					
+				}
+				console.log(foundcards.length)
+
+				var results = document.getElementById("results");
+				
+				trello_search.clearChildren(results);
+
+				var header = document.createElement("header");
+				header.innerText = "Found "+foundcards.length + " cards";
+
+				results.appendChild(header);
+
+				var cardlist = document.createElement("table");
+				cardlist.setAttribute("id","cardlist");
+				
+				var header= document.createElement("tr");
+				var th = document.createElement("th");
+				th.innerText = "CS#"
+				header.appendChild(th);
+				th = document.createElement("th");
+				th.innerText = "Title"
+				header.appendChild(th);
+
+				th = document.createElement("th");
+				th.innerText = "Last Update"
+				header.appendChild(th);
+
+				th = document.createElement("th");
+				th.innerText = "Board"
+				header.appendChild(th);
+
+				th = document.createElement("th");
+				th.innerText = "List"
+				header.appendChild(th);
+
+				th = document.createElement("th");
+				th.innerText = "Description"
+				header.appendChild(th);
+				th = document.createElement("th");
+				th.innerText = "Repro steps"
+				header.appendChild(th);
+
+
+				var thead = document.createElement("thead");
+				thead.appendChild(header);
+
+				cardlist.appendChild(thead);
+				var tbody = document.createElement("tbody");
+				for(var card in foundcards){
+					tbody.appendChild(trello_search.formatcard(foundcards[card]));
+				}
+				cardlist.appendChild(tbody);
+				results.appendChild(cardlist);
+				$("#cardlist").tablesorter(); 
+
+			};
+
+
+			this.clearChildren = function(el){
+				while(el.children.length>0){
+					el.removeChild(el.children[0]);
+				}
+			};
+
+			this.formatcard = function(card){
+				//console.log(card);
+				var item = document.createElement("tr");
+				var td = document.createElement("td");
+				td.innerText = card.name.substring(1,card.name.indexOf("]"));
+				item.appendChild(td);
+
+				td = document.createElement("td");
+				var link = document.createElement("a");
+				link.innerText = card.name;
+				link.setAttribute("href", card.shortUrl);
+				link.setAttribute("target", "_blank");
+
+
+				td.appendChild(link);
+				item.appendChild(td);
+
+
+				td = document.createElement("td");
+				td.innerText = " "+card.dateLastActivity;
+				item.appendChild(td);
+
+				td = document.createElement("td");
+				td.innerText = trello_search.data.boards[card.idBoard]?trello_search.data.boards[card.idBoard]:card.idBoard ; 
+				item.appendChild(td);
+				td = document.createElement("td");
+				td.innerText = trello_search.data.lists[card.idList]?trello_search.data.lists[card.idList]:card.idList ; 
+				item.appendChild(td);
+
+				var tmp = card.desc.split("=================================");
+				td = document.createElement("td");
+				td.innerHTML = tmp.length>=3?tmp[1].replace("Reproduction steps",""):tmp[0];
+				
+				item.appendChild(td);
+				td = document.createElement("td");
+				var pre = document.createElement("pre");
+				pre.innerHTML = tmp.length>=3?tmp[2].trim():"";
+				td.appendChild(pre);
+				item.appendChild(td);
+
+				return item;
+
+			}
+
+
+			this.loadData=function(){
+				//TODO Check local storage
+				// if(localStorage["trello-cards"]){
+				// 	try{
+				// 	trello_search.data.cards = JSON.parse(localStorage["trello-cards"]);
+				// 	trello_search.data.state = "Loaded Cached data";
+				// 	trello_search.updateState();
+				// 	}
+				// 	catch(ex){}
+				// }
+				
+				for(var board in  trello_search.data.boards){
+					Trello.rest("GET", "/boards/"+board+"/cards", trello_search.mergeCards, trello_search.reportError);
+					Trello.rest("GET", "/boards/"+board, trello_search.mergeBoards, trello_search.reportError);
+				}
+			};
+
+			this.mergeCards = function(data){
+				for(var i = 0; i <data.length;i++){
+					trello_search.data.cards[ data[i].id] = data[i];
+				}
+				trello_search.data.updated = new Date();
+				trello_search.data.state = "Ready";
+				//TODO enable the relaod button
+				// localStorage["trello-cards"] = JSON.stringify(trello_search.data.cards);
+			}
+			this.mergeBoards = function(data){
+				console.log(data.name, data.id);
+				trello_search.data.boards[data.id] = data.name;
+				Trello.rest("GET", "/boards/"+data.id+"/lists", trello_search.mergeLists, trello_search.reportError);
+				
+
+			}
+			this.mergeLists = function(data){
+				//console.log(data);
+				for(var i =0 ;  i < data.length;i++){
+					trello_search.data.lists[data[i].id] = data[i].name;
+				}
+				trello_search.populateBoardCheckboxes();
+
+			}
+			this.reportError = function(data){
+				console.error("ERROP",data);
+
+			}
+
+			this.enterToSearch = function(e){
+				console.log(e, e.keyCode);
+				if(e.keyCode === 13){
+					trello_search.searchcache();
+				}
+			}
+			this.populateBoardCheckboxes = function(){
+				var el = document.getElementById("boards");
+				trello_search.clearChildren(el);
+				for(var id in trello_search.data.boards){
+					var div = document.createElement("div");
+	
+
+					var input = document.createElement("input");
+					input.setAttribute("type", "checkbox");
+					input.setAttribute("name", "show_board");
+					input.setAttribute("id", "check_"+id);
+					input.setAttribute("value", id);
+					input.setAttribute("checked", "checked");
+					div.appendChild(input);
+
+					var label =  document.createElement("label");
+					label.innerText = trello_search.data.boards[id];
+					label.setAttribute("for", "check_"+id);
+					div.appendChild(label);
+
+					el.appendChild(div);
+
+				}
+
+				// el = document.getElementById("lists");
+				// trello_search.clearChildren(el);
+				// for(var id in trello_search.data.lists){
+				// 	var div = document.createElement("div");
+	
+
+				// 	var input = document.createElement("input");
+				// 	input.setAttribute("type", "checkbox");
+				// 	input.setAttribute("name", "show_board");
+				// 	input.setAttribute("id", "check_list_"+id);
+				// 	input.setAttribute("value", id);
+				// 	input.setAttribute("checked", "checked");
+				// 	div.appendChild(input);
+
+				// 	var label =  document.createElement("label");
+				// 	label.innerText = trello_search.data.lists[id];
+				// 	label.setAttribute("for", "check_list_"+id);
+				// 	div.appendChild(label);
+
+				// 	el.appendChild(div);
+
+				// }
+
+			}
+
+		})();
+
+		
+	</script>
+
+</head>
+<body>
+	<header>
+	<div id="help">
+
+			<p>Search for any token in the string on any UWE Subnautica Trello board. split on space. Designed to make finding bugs easier</p>
+		</div>
+		<nav>
+			<input id="search" type="text" /> 
+			<button onclick="trello_search.searchcache()">Search</button>
+			<button onclick="document.getElementById('advanced').setAttribute('style','display:block');">Show Adv. Options</button>
+			<button onclick="trello_search.loadData();">Reload Cards</button>
+		</nav>
+		<div id="advanced" style="display: none">
+			<button onclick="document.getElementById('advanced').setAttribute('style','display:none');">Hide Advnaced Options</button>
+				
+			<div style="display:flex;">
+				<div>
+					<h3>Boards to search</h3>
+						
+					<div id="boards">
+					</div>
+				</div>
+				<!-- <div>
+					<h3>Lists to search</h3>
+					
+					<div id="lists">
+					</div>
+				</div> -->
+			</div>
+		</div>
+		<div id="status">
+			Loading...
+		</div>
+
+	</header>
+	<div id="results">
+	</div>
+	<footer>
+		<script>	trello_search.init();</script>
+		<p>This tool searches a local chace of trello cards on subnautica open bug boards.  This should let us be able to actually answer "The is it known that.." questions witout going to 20 boards"</p>
+	</footer>
+</body>
+</html>
