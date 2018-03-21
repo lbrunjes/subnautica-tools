@@ -51,7 +51,7 @@
 	<script src="jquery.tablesorter.min.js"></script>
 	<script src="https://trello.com/1/client.js?key=1afa096bd082fd2fb67b91bc9c6b43e7"></script>
 	<script>
-		Trello.authorize({name:"Confused's magic search box"});
+		Trello.authorize({name:"Confused's magic search box", expiration:"never"});
 
 		var trello_search=
 		new (function(){
@@ -100,12 +100,21 @@
 
 
 			this.searchcache = function(){
-				var terms = document.getElementById("search").value.toLowerCase().split(" ");
+				var terms = [];
+				var splitregex = /([^"]\S*|".+?")\s*/g;
+				var m;
+				var search = document.getElementById("search").value.toLowerCase();
+				while(m = splitregex.exec(search)){
+					if(m[1][0]!='"')
+					terms.push(m[1]);
+					else{
+						terms.push(m[1].substring(1,m[1].length -1))
+					}
+				}
 
-				//[^\s"']+|"([^"]*)"|'([^']*)'
+			
 				console.log(terms);
-				//TODO tokenize
-
+				
 
 
 				//for each board then for each list search title, description for terms in search string.
@@ -273,7 +282,7 @@
 
 			}
 			this.reportError = function(data){
-				console.error("ERROP",data);
+				console.error("ERROR",data.responseText);
 
 			}
 
