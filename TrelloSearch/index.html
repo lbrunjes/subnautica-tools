@@ -77,6 +77,7 @@
 					"5491f961aaa349bb7ebdfc3a":"subnautica-temporary-storage",
 					"587ec3695fe6dc613f328b4b":"subnautica-xbox-release-bugfixing",
 					"53b5beffc164e8f97e420c96":"subnautica-level-design"
+					//"FYDFnV6y":"expansion pt"
 				},
 				cards:{
 
@@ -283,6 +284,10 @@
 			}
 			this.reportError = function(data){
 				console.error("ERROR",data.responseText);
+				//manually delete expired tokens.
+				if(data.responseText.indexOf("expired token")>=0){
+					delete localStorage["trello_token"];
+				}
 
 			}
 
